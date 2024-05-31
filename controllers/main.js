@@ -1,14 +1,14 @@
 import { ListChosenItem } from "../models/ListChosen.js";
-import { clallData } from "../utils/callData.js";
+import { callData } from "../utils/callData.js";
+import { clotheModel } from "../models/clotheModel.js";
 
-let clothData = new clallData();
+let clothData = new callData();
 let navPills = [];
 let tabPanes = [];
 let dataArray = clothData.callData();
 let listChosenItem = new ListChosenItem();
 
 navPills = dataArray.navPills;
-console.log("navPills: ", navPills);
 tabPanes = dataArray.tabPanes;
 
 let renderNavPills = () => {
@@ -18,15 +18,12 @@ let renderNavPills = () => {
     let activeClass = item.tabName === "tabTopClothes" ? "active" : "";
     let fadeClass = item.tabName !== "tabTopClothes" ? "fade" : "";
     contentNavPills += renderNavPillsItem(item, activeClass);
-    contentNavPanes += `<div class="tab-pane containner ${activeClass} ${fadeClass}" id="${
-      item.tabName
-    }">
-    <div>
-    <div class="row">
-    ${renderNavPanes(item.type, tabPanes)}
-      </div>
-    </div>
-    </div>`;
+    contentNavPanes += `
+      <div class="tab-pane container ${activeClass} ${fadeClass}" id="${item.tabName}">
+        <div class="row">
+          ${renderNavPanes(item.type, tabPanes)}
+        </div>
+      </div>`;
   });
   document.querySelector(".nav-pills").innerHTML = contentNavPills;
   document.querySelector(".tab-content").innerHTML = contentNavPanes;
@@ -43,202 +40,157 @@ let renderNavPillsItem = (pill, activeClass) => {
         </a>
     </li>`;
 };
+
 let pushTabNameArray = (type, tabPanes) => {
-  let arrayItem = [];
-  tabPanes.map((panes) => {
-    if (panes.type === type) {
-      arrayItem.push(panes);
-    }
-  });
-  return arrayItem;
+  return tabPanes.filter(pane => pane.type === type);
 };
+
 let renderTabPanesItem = (arrayItem) => {
-  let tdContent = "";
-  arrayItem.forEach((item) => {
-    tdContent += `<div class="col-md-3">
-        <div class="card text-center">
-          <img
-            src="${item.imgSrc_jpg}"
-          />
-          <h4><b>${item.name}</b></h4>
-          <button data-id="${item.id}" data-type="${item.type}" data-name="${item.name}" data-desc="${item.desc}" data-imgsrcjpg="${item.imgSrc_jpg}"  data-imgsrcpng="${item.imgSrc_png}" class="changStyle">Thử đồ</button>
-        </div>
-      </div>`;
-  });
-  return tdContent;
+  return arrayItem.map(item => `
+    <div class="col-md-3">
+      <div class="card text-center">
+        <img src="${item.imgSrc_jpg}" alt="${item.name}" />
+        <h4><b>${item.name}</b></h4>
+        <button data-id="${item.id}" data-type="${item.type}" data-name="${item.name}" data-desc="${item.desc}" data-imgsrcjpg="${item.imgSrc_jpg}" data-imgsrcpng="${item.imgSrc_png}" class="changStyle">Try On</button>
+      </div>
+    </div>`).join('');
 };
 
 let renderNavPanes = (type, tabPanes) => {
-  let arrayItem = [];
-  let elmItem = "";
-  switch (type) {
-    case "topclothes":
-      arrayItem = pushTabNameArray(type, tabPanes);
-      elmItem = renderTabPanesItem(arrayItem);
-      break;
-    case "botclothes":
-      arrayItem = pushTabNameArray(type, tabPanes);
-      elmItem = renderTabPanesItem(arrayItem);
-      break;
-    case "shoes":
-      arrayItem = pushTabNameArray(type, tabPanes);
-      elmItem = renderTabPanesItem(arrayItem);
-      break;
-    case "handbags":
-      arrayItem = pushTabNameArray(type, tabPanes);
-      elmItem = renderTabPanesItem(arrayItem);
-      break;
-    case "necklaces":
-      arrayItem = pushTabNameArray(type, tabPanes);
-      elmItem = renderTabPanesItem(arrayItem);
-      break;
-    case "hairstyle":
-      arrayItem = pushTabNameArray(type, tabPanes);
-      elmItem = renderTabPanesItem(arrayItem);
-      break;
-    case "background":
-      arrayItem = pushTabNameArray(type, tabPanes);
-      elmItem = renderTabPanesItem(arrayItem);
-      break;
-    default:
-      break;
-  }
-  return elmItem;
+  let arrayItem = pushTabNameArray(type, tabPanes);
+  return renderTabPanesItem(arrayItem);
 };
 
 renderNavPills();
 
 let findIndex = (type, listChosenItem) => {
-  let indexType = -1;
-  listChosenItem.forEach((item, index) => {
-    if (item.type === type) {
-      indexType = index;
-    }
-  });
-  return indexType;
+  return listChosenItem.findIndex(item => item.type === type);
 };
 
-let btnTryList = Array.from(document.querySelectorAll(".changStyle"));
-btnTryList.forEach((btnTry, index) => {
+document.querySelectorAll(".changStyle").forEach((btnTry) => {
   btnTry.addEventListener("click", function () {
     let id = btnTry.getAttribute("data-id");
     let type = btnTry.getAttribute("data-type");
     let name = btnTry.getAttribute("data-name");
     let desc = btnTry.getAttribute("data-desc");
-    let imgsrcjpg = btnTry.getAttribute("data-imgsrcjpg");
-    let imgsrcpng = btnTry.getAttribute("data-imgsrcpng");
+    let imgSrc_jpg = btnTry.getAttribute("data-imgsrcjpg");
+    let imgSrc_png = btnTry.getAttribute("data-imgsrcpng");
 
-    let chosenItem = new ListChosenItem(
-      id,
-      type,
-      name,
-      desc,
-      imgsrcjpg,
-      imgsrcpng
-    );
-    if (listChosenItem.listArray) {
-      let index = findIndex(chosenItem.type, listChosenItem.listArray);
+    let chosenItem = new clotheModel(id, type, name, desc, imgSrc_jpg, imgSrc_png);
+    let index = findIndex(chosenItem.type, listChosenItem.listArray);
 
-      if (index !== -1) {
-        //đã tồn tại type
-        listChosenItem.listArray[index] = chosenItem;
-      } else {
-        listChosenItem.addChosenItem(chosenItem);
-      }
+    if (index !== -1) {
+      listChosenItem.listArray[index] = chosenItem;
+    } else {
+      listChosenItem.addChosenItem(chosenItem);
     }
+
     renderItemForModel(listChosenItem.listArray);
   });
 });
 
 let renderItemForModel = (listChosen) => {
-  if (listChosen.length > 0 && listChosen) {
-    listChosen.forEach((item, index) => {
-      if (item.type === "topclothes") {
-        renderBikiniTop(item.imgsrc_png);
-      }
-      if (item.type === "botclothes") {
-        renderBikiniBottom(item.imgsrc_png);
-      }
-      if (item.type === "shoes") {
-        renderFeet(item.imgsrc_png);
-      }
-      if (item.type === "handbags") {
-        renderHandbags(item.imgsrc_png);
-      }
-      if (item.type === "necklaces") {
-        renderNecklace(item.imgsrc_png);
-      }
-      if (item.type === "hairstyle") {
-        renderHairstyle(item.imgsrc_png);
-      }
-      if (item.type === "background") {
-        renderBackground(item.imgsrc_png);
-      }
-    });
-  }
-};
-let renderBikiniTop = (img) => {
-  document.querySelector(".bikinitop").style.width = "500px";
-  document.querySelector(".bikinitop").style.height = "500px";
-  document.querySelector(".bikinitop").style.background = `url(${img})`;
-  document.querySelector(".bikinitop").style.position = "absolute";
-  document.querySelector(".bikinitop").style.top = "-9%";
-  document.querySelector(".bikinitop").style.left = "-5%";
-  document.querySelector(".bikinitop").style.zIndex = "3";
-  document.querySelector(".bikinitop").style.transform = "scale(0.5)";
-};
-let renderBikiniBottom = (img) => {
-  document.querySelector(".bikinibottom").style.width = "500px";
-  document.querySelector(".bikinibottom").style.height = "1000px";
-  document.querySelector(".bikinibottom").style.background = `url(${img})`;
-  document.querySelector(".bikinibottom").style.position = "absolute";
-  document.querySelector(".bikinibottom").style.top = "-30%";
-  document.querySelector(".bikinibottom").style.left = "-5%";
-  document.querySelector(".bikinibottom").style.zIndex = "2";
-  document.querySelector(".bikinibottom").style.transform = "scale(0.5)";
+  listChosen.forEach(item => {
+    switch (item.type) {
+      case "topclothes":
+        renderBikiniTop(item.imgSrc_png);
+        break;
+      case "botclothes":
+        renderBikiniBottom(item.imgSrc_png);
+        break;
+      case "shoes":
+        renderFeet(item.imgSrc_png);
+        break;
+      case "handbags":
+        renderHandbags(item.imgSrc_png);
+        break;
+      case "necklaces":
+        renderNecklace(item.imgSrc_png);
+        break;
+      case "hairstyle":
+        renderHairstyle(item.imgSrc_png);
+        break;
+      case "background":
+        renderBackground(item.imgSrc_png);
+        break;
+      default:
+        break;
+    }
+  });
 };
 
-let renderFeet = (img) => {
-  document.querySelector(".feet").style.width = "500px";
-  document.querySelector(".feet").style.height = "1000px";
-  document.querySelector(".feet").style.background = `url(${img})`;
-  document.querySelector(".feet").style.position = "absolute";
-  document.querySelector(".feet").style.top = "-37%";
-  document.querySelector(".feet").style.right = "-3.5%";
-  document.querySelector(".feet").style.zIndex = "1";
-  document.querySelector(".feet").style.transform = "scale(0.5)";
-};
-let renderHandbags = (img) => {
-  document.querySelector(".handbag").style.width = "500px";
-  document.querySelector(".handbag").style.height = "1000px";
-  document.querySelector(".handbag").style.background = `url(${img})`;
-  document.querySelector(".handbag").style.position = "absolute";
-  document.querySelector(".handbag").style.top = "-40%";
-  document.querySelector(".handbag").style.right = "-3.5%";
-  document.querySelector(".handbag").style.zIndex = "4";
-  document.querySelector(".handbag").style.transform = "scale(0.5)";
+const renderBikiniTop = (img) => {
+  let el = document.querySelector(".bikinitop");
+  el.style.width = "500px";
+  el.style.height = "500px";
+  el.style.background = `url(${img})`;
+  el.style.position = "absolute";
+  el.style.top = "-9%";
+  el.style.left = "-5%";
+  el.style.zIndex = "3";
+  el.style.transform = "scale(0.5)";
 };
 
-let renderNecklace = (img) => {
-  document.querySelector(".necklace").style.width = "500px";
-  document.querySelector(".necklace").style.height = "1000px";
-  document.querySelector(".necklace").style.background = `url(${img})`;
-  document.querySelector(".necklace").style.position = "absolute";
-  document.querySelector(".necklace").style.top = "-35%";
-  document.querySelector(".necklace").style.right = "-3.5%";
-  document.querySelector(".necklace").style.zIndex = "4";
-  document.querySelector(".necklace").style.transform = "scale(0.5)";
+const renderBikiniBottom = (img) => {
+  let el = document.querySelector(".bikinibottom");
+  el.style.width = "500px";
+  el.style.height = "1000px";
+  el.style.background = `url(${img})`;
+  el.style.position = "absolute";
+  el.style.top = "-30%";
+  el.style.left = "-5%";
+  el.style.zIndex = "2";
+  el.style.transform = "scale(0.5)";
 };
-let renderHairstyle = (img) => {
-  document.querySelector(".hairstyle").style.width = "1000px";
-  document.querySelector(".hairstyle").style.height = "1000px";
-  document.querySelector(".hairstyle").style.background = `url(${img})`;
-  document.querySelector(".hairstyle").style.position = "absolute";
-  document.querySelector(".hairstyle").style.top = "-75%";
-  document.querySelector(".hairstyle").style.right = "-57%";
-  document.querySelector(".hairstyle").style.zIndex = "4";
-  document.querySelector(".hairstyle").style.transform = "scale(0.15)";
+
+const renderFeet = (img) => {
+  let el = document.querySelector(".feet");
+  el.style.width = "500px";
+  el.style.height = "1000px";
+  el.style.background = `url(${img})`;
+  el.style.position = "absolute";
+  el.style.top = "-37%";
+  el.style.right = "-3.5%";
+  el.style.zIndex = "1";
+  el.style.transform = "scale(0.5)";
 };
-let renderBackground = (img) => {
+
+const renderHandbags = (img) => {
+  let el = document.querySelector(".handbag");
+  el.style.width = "500px";
+  el.style.height = "1000px";
+  el.style.background = `url(${img})`;
+  el.style.position = "absolute";
+  el.style.top = "-40%";
+  el.style.right = "-3.5%";
+  el.style.zIndex = "4";
+  el.style.transform = "scale(0.5)";
+};
+
+const renderNecklace = (img) => {
+  let el = document.querySelector(".necklace");
+  el.style.width = "500px";
+  el.style.height = "1000px";
+  el.style.background = `url(${img})`;
+  el.style.position = "absolute";
+  el.style.top = "-35%";
+  el.style.right = "-3.5%";
+  el.style.zIndex = "4";
+  el.style.transform = "scale(0.5)";
+};
+
+const renderHairstyle = (img) => {
+  let el = document.querySelector(".hairstyle");
+  el.style.width = "1000px";
+  el.style.height = "1000px";
+  el.style.background = `url(${img})`;
+  el.style.position = "absolute";
+  el.style.top = "-75%";
+  el.style.right = "-57%";
+  el.style.zIndex = "4";
+  el.style.transform = "scale(0.15)";
+};
+
+const renderBackground = (img) => {
   document.querySelector(".background").style.backgroundImage = `url(${img})`;
 };
